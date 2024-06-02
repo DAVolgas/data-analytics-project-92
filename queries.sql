@@ -58,3 +58,52 @@ select				-- запрос для вывода необходимой для от
 	income
 from dow_amount
 
+with age_cat as			-- добавляем поле с возрастными категориями
+(
+select *,
+	case 
+		when c.age between 16 and 25 then '16-25'
+		when c.age between 26 and 40 then '26-40'
+		when c.age > 40 then '40+'
+	end as age_category
+from customers c
+)
+select					-- считаем количество покупателй по возрастным категориям
+	age_category,
+	count(age) as age_count
+from age_cat
+group by age_category
+order by age_category
+
+
+select 					-- выводим количество покупателй и выручку по месяцам
+	to_char(s.sale_date, 'yyyy-mm') as selling_month,  	-- переводим дату в требуемый вид
+	count(distinct s.customer_id) as total_customers,	-- считаем уникальных покупателей
+	floor(sum(s.quantity * p.price)) as income 			-- выручка с округлением до целого в меньшую сторону 
+from sales s
+inner join products p 									-- присоединем таблицу с продуктами для расчета выучки
+	on s.product_id = p.product_id 
+group by to_char(s.sale_date, 'yyyy-mm')				-- группировка по месяцам
+order by to_char(s.sale_date, 'yyyy-mm')				-- сортировака по месяцам по возрастанию
+
+
+with rn_tab as		-- CTE - добавляем нумерацию строк акционных продаж по id покупателя с сортировкой по дате и id покупателя
+(
+select *,
+	row_number () over (partition by s.customer_id order by s.sale_date, s.customer_id) as rn
+from sales s 
+inner join products p 
+	on s.product_id = p.product_id 
+where p.price = 0		-- отбираем продажи с ценой 0 (акционные товары)
+)
+
+select 				-- выводим информацию для отчета 
+	c.first_name ||' '|| c.last_name as customer,	-- объединение имени и фамилии покупателей в одно поле
+	r.sale_date,
+	e.first_name ||' '|| e.last_name as seller		-- бъединение имени и фамилии продавцов в одно поле
+from rn_tab r
+inner join employees e 
+	on e.employee_id = r.sales_person_id
+inner join customers c 
+	on c.customer_id = r.customer_id
+where r.rn = 1										-- отбираем строки с первой датой продажи по акции
