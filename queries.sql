@@ -42,14 +42,14 @@ with dow_amount as								-- в СТЕ выводим номер и назван
 select 
 	e.first_name ||' '|| e.last_name as seller, 		-- объединение имени и фамилии в одно поле
 	extract (isodow from s.sale_date) as day_number,	-- из даты продажи берем номер дня недели (пн = 1 ... вс = 7 ISO 8601)
-	to_char(s.sale_date, 'day') as day_of_week,			-- из даты продижи берем название дня недели и убираем лишние пробелы
+	to_char(s.sale_date, 'Day') as day_of_week,			-- из даты продижи берем название дня недели и убираем лишние пробелы
 	floor(SUM(s.quantity * p.price)) as income			-- суммарная выручка с округлением в меньшую сторону до целого числа
 from employees e 										--	присоединяем таблицу sales
 inner join sales s 								
 	on s.sales_person_id = e.employee_id 
 inner join products p									-- присоединяем таблицу products
 	on p.product_id = s.product_id
-group by e.first_name ||' '|| e.last_name, to_char(s.sale_date, 'day'), extract (isodow from s.sale_date) -- группировка по необходимым полям
+group by e.first_name ||' '|| e.last_name, to_char(s.sale_date, 'Day'), extract (isodow from s.sale_date) -- группировка по необходимым полям
 order by extract (isodow from s.sale_date), e.first_name ||' '|| e.last_name		-- сортировка по номеру дня недели 
 )
 select				-- запрос для вывода необходимой для отчета информации 
