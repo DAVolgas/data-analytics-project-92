@@ -1,7 +1,7 @@
 -- запрос выводит общее количество покупателей
-select COUNT(customer_id) as customers_count from customers
+select COUNT(customer_id) as customers_count from customers;
 
--- отчет о десятке лучших продавцов
+-- отчет о десятке лучших продавцов 
 select 
 	e.first_name ||' '|| e.last_name as seller,
 	COUNT(s.sales_id) as operations,
@@ -13,7 +13,7 @@ inner join products p
 	on p.product_id = s.product_id 
 group by e.first_name ||' '|| e.last_name
 order by floor(SUM(s.quantity * p.price)) desc
-limit 10
+limit 10;
 
 -- создаем СТЕ с расчетом средней выручки по всем продавцам с округлением в меньшую сторону до целого числа
 with total_avg_amount as
@@ -25,7 +25,7 @@ with total_avg_amount as
 		on s.product_id = p.product_id 
 )
 -- отчет о продавцах, чья средняя выручка за сделку меньше средней выручки за сделку по всем продавцам
-select 											
+select 
 	e.first_name ||' '|| e.last_name as seller,
 	floor(AVG(s.quantity * p.price)) as average_income
 from employees e
@@ -35,10 +35,10 @@ inner join products p
 	on p.product_id = s.product_id
 group by e.first_name ||' '|| e.last_name
 having floor(AVG(s.quantity * p.price)) < (select total_average_income from total_avg_amount)
-order by floor(AVG(s.quantity * p.price)) asc
+order by floor(AVG(s.quantity * p.price)) asc;
 
 -- в СТЕ выводим номер и название дня недели + имена и фамалии продавцов + суммарная выручка
-with dow_amount as
+with dow_amount as 
 (
 select 
 	e.first_name ||' '|| e.last_name as seller,
@@ -58,7 +58,7 @@ select
 	seller,
 	day_of_week,
 	income
-from dow_amount
+from dow_amount;
 
 -- добавляем поле с возрастными категориями
 with age_cat as
@@ -77,7 +77,7 @@ select
 	count(age) as age_count
 from age_cat
 group by age_category
-order by age_category
+order by age_category;
 
 -- выводим количество покупателй и выручку по месяцам
 select
@@ -88,7 +88,7 @@ from sales s
 inner join products p
 	on s.product_id = p.product_id 
 group by to_char(s.sale_date, 'yyyy-mm')
-order by to_char(s.sale_date, 'yyyy-mm')
+order by to_char(s.sale_date, 'yyyy-mm');
 
 -- CTE - добавляем нумерацию строк акционных продаж по id покупателя с сортировкой по дате и id покупателя
 with rn_tab as
@@ -110,4 +110,4 @@ inner join employees e
 	on e.employee_id = r.sales_person_id
 inner join customers c 
 	on c.customer_id = r.customer_id
-where r.rn = 1
+where r.rn = 1;
