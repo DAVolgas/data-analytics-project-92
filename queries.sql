@@ -99,10 +99,10 @@ inner join products as p
 group by TO_CHAR(s.sale_date, 'yyyy-mm')
 order by TO_CHAR(s.sale_date, 'yyyy-mm');
 
--- CTE - добавляем нумерацию строк акционных продаж по id покупателя с сортировкой по дате и id покупателя
+-- CTE нумерацию строк акционных продаж
 with rn_tab as (
     select
-        *,
+        s.*,
         ROW_NUMBER()
             over (
                 partition by s.customer_id order by s.sale_date, s.customer_id
