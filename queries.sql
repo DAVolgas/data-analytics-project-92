@@ -1,7 +1,8 @@
 select COUNT(customer_id) as customers_count from customers
 -- запрос выводит общее количество покупателей
 
-select 											-- отчет о десятке лучших продавцов
+-- отчет о десятке лучших продавцов
+select
 	e.first_name ||' '|| e.last_name as seller, -- объединение имени и фамилии в одно поле
 	COUNT(s.sales_id) as operations,			-- подсчет количества сделок
 	floor(SUM(s.quantity * p.price)) as income  -- суммарная выручка с округлением в меньшую сторону до целого числа
