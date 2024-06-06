@@ -1,22 +1,22 @@
-select COUNT(customer_id) as customers_count from customers
 -- запрос выводит общее количество покупателей
+select COUNT(customer_id) as customers_count from customers
 
 -- отчет о десятке лучших продавцов
-select
-	e.first_name ||' '|| e.last_name as seller, -- объединение имени и фамилии в одно поле
-	COUNT(s.sales_id) as operations,			-- подсчет количества сделок
-	floor(SUM(s.quantity * p.price)) as income  -- суммарная выручка с округлением в меньшую сторону до целого числа
+select 
+	e.first_name ||' '|| e.last_name as seller,
+	COUNT(s.sales_id) as operations,
+	floor(SUM(s.quantity * p.price)) as income
 from employees e 
-inner join sales s 								-- присоединяем таблицу sales
+inner join sales s 
 	on s.sales_person_id = e.employee_id 
-inner join products p							-- присоединяем таблицу roducts
+inner join products p 
 	on p.product_id = s.product_id 
-group by e.first_name ||' '|| e.last_name		-- выполняем группировку по имени и фамилии продавца, т.к. необходимо получить данные по продавцам
-order by floor(SUM(s.quantity * p.price)) desc  -- сортировка по выручке в убывающем порядке для дальнейшего отбора топ-10 продавцов
-limit 10										-- отфильтровываем топ-10 по выручке (первые 10 строк из результата запроса)
+group by e.first_name ||' '|| e.last_name
+order by floor(SUM(s.quantity * p.price)) desc
+limit 10
 
-
-with total_avg_amount as						-- создаем СТЕ с расчетом средней выручки по всем продавцам с округлением в меньшую сторону до целого числа
+-- создаем СТЕ с расчетом средней выручки по всем продавцам с округлением в меньшую сторону до целого числа
+with total_avg_amount as
 (
 	select 
 		floor(AVG(s.quantity * p.price)) as total_average_income
@@ -24,41 +24,44 @@ with total_avg_amount as						-- создаем СТЕ с расчетом ср�
 	inner join products p 
 		on s.product_id = p.product_id 
 )
-select 											-- отчет о продавцах, чья средняя выручка за сделку меньше средней выручки за сделку по всем продавцам
-	e.first_name ||' '|| e.last_name as seller, -- объединяяем имя и фамилию в одно поле
-	floor(AVG(s.quantity * p.price)) as average_income -- средняя выручка с округлением в меньшую сторону до целого числа 
+-- отчет о продавцах, чья средняя выручка за сделку меньше средней выручки за сделку по всем продавцам
+select 											
+	e.first_name ||' '|| e.last_name as seller,
+	floor(AVG(s.quantity * p.price)) as average_income
 from employees e
-inner join sales s 								-- присоединяем таблицу sales
+inner join sales s 
 	on s.sales_person_id = e.employee_id 
-inner join products p							-- присоединяем таблицу products
+inner join products p
 	on p.product_id = s.product_id
-group by e.first_name ||' '|| e.last_name		-- выполняем группировку по имени и фамилии продавца, т.к. необходимо получить данные по продавцам
-having floor(AVG(s.quantity * p.price)) < (select total_average_income from total_avg_amount) -- применяем условие фильтрации
-order by floor(AVG(s.quantity * p.price)) asc 	-- сортировка согласно условиям задачи
+group by e.first_name ||' '|| e.last_name
+having floor(AVG(s.quantity * p.price)) < (select total_average_income from total_avg_amount)
+order by floor(AVG(s.quantity * p.price)) asc
 
-
-with dow_amount as								-- в СТЕ выводим номер и название дня недели + имена и фамалии продавцов + суммарная выручка 
+-- в СТЕ выводим номер и название дня недели + имена и фамалии продавцов + суммарная выручка
+with dow_amount as
 (
 select 
-	e.first_name ||' '|| e.last_name as seller, 		-- объединение имени и фамилии в одно поле
-	extract (isodow from s.sale_date) as day_number,	-- из даты продажи берем номер дня недели (пн = 1 ... вс = 7 ISO 8601)
-	to_char(s.sale_date, 'day') as day_of_week,			-- из даты продижи берем название дня недели и убираем лишние пробелы
-	floor(SUM(s.quantity * p.price)) as income			-- суммарная выручка с округлением в меньшую сторону до целого числа
-from employees e 										--	присоединяем таблицу sales
+	e.first_name ||' '|| e.last_name as seller,
+	extract (isodow from s.sale_date) as day_number,
+	to_char(s.sale_date, 'day') as day_of_week,
+	floor(SUM(s.quantity * p.price)) as income
+from employees e
 inner join sales s 								
 	on s.sales_person_id = e.employee_id 
-inner join products p									-- присоединяем таблицу products
+inner join products p
 	on p.product_id = s.product_id
-group by e.first_name ||' '|| e.last_name, to_char(s.sale_date, 'day'), extract (isodow from s.sale_date) -- группировка по необходимым полям
-order by extract (isodow from s.sale_date), e.first_name ||' '|| e.last_name		-- сортировка по номеру дня недели 
+group by e.first_name ||' '|| e.last_name, to_char(s.sale_date, 'day'), extract (isodow from s.sale_date)
+order by extract (isodow from s.sale_date), e.first_name ||' '|| e.last_name
 )
-select				-- запрос для вывода необходимой для отчета информации 
+-- запрос для вывода необходимой для отчета информации
+select				 
 	seller,
 	day_of_week,
 	income
 from dow_amount
 
-with age_cat as			-- добавляем поле с возрастными категориями
+-- добавляем поле с возрастными категориями
+with age_cat as
 (
 select *,
 	case 
@@ -68,42 +71,43 @@ select *,
 	end as age_category
 from customers c
 )
-select					-- считаем количество покупателй по возрастным категориям
+-- считаем количество покупателй по возрастным категориям
+select
 	age_category,
 	count(age) as age_count
 from age_cat
 group by age_category
 order by age_category
 
-
-select 					-- выводим количество покупателй и выручку по месяцам
-	to_char(s.sale_date, 'yyyy-mm') as selling_month,  	-- переводим дату в требуемый вид
-	count(distinct s.customer_id) as total_customers,	-- считаем уникальных покупателей
-	floor(sum(s.quantity * p.price)) as income 			-- выручка с округлением до целого в меньшую сторону 
+-- выводим количество покупателй и выручку по месяцам
+select
+	to_char(s.sale_date, 'yyyy-mm') as selling_month,
+	count(distinct s.customer_id) as total_customers,
+	floor(sum(s.quantity * p.price)) as income
 from sales s
-inner join products p 									-- присоединем таблицу с продуктами для расчета выучки
+inner join products p
 	on s.product_id = p.product_id 
-group by to_char(s.sale_date, 'yyyy-mm')				-- группировка по месяцам
-order by to_char(s.sale_date, 'yyyy-mm')				-- сортировака по месяцам по возрастанию
+group by to_char(s.sale_date, 'yyyy-mm')
+order by to_char(s.sale_date, 'yyyy-mm')
 
-
-with rn_tab as		-- CTE - добавляем нумерацию строк акционных продаж по id покупателя с сортировкой по дате и id покупателя
+-- CTE - добавляем нумерацию строк акционных продаж по id покупателя с сортировкой по дате и id покупателя
+with rn_tab as
 (
 select *,
 	row_number () over (partition by s.customer_id order by s.sale_date, s.customer_id) as rn
 from sales s 
 inner join products p 
 	on s.product_id = p.product_id 
-where p.price = 0		-- отбираем продажи с ценой 0 (акционные товары)
+where p.price = 0
 )
-
-select 				-- выводим информацию для отчета 
-	c.first_name ||' '|| c.last_name as customer,	-- объединение имени и фамилии покупателей в одно поле
+-- выводим информацию для отчета
+select 				 
+	c.first_name ||' '|| c.last_name as customer,
 	r.sale_date,
-	e.first_name ||' '|| e.last_name as seller		-- бъединение имени и фамилии продавцов в одно поле
+	e.first_name ||' '|| e.last_name as seller
 from rn_tab r
 inner join employees e 
 	on e.employee_id = r.sales_person_id
 inner join customers c 
 	on c.customer_id = r.customer_id
-where r.rn = 1										-- отбираем строки с первой датой продажи по акции
+where r.rn = 1
