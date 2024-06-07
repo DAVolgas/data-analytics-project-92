@@ -13,7 +13,7 @@ inner join sales as s
 inner join products as p
     on s.product_id = p.product_id
 group by e.first_name || ' ' || e.last_name
-order by 3 desc
+order by FLOOR(SUM(s.quantity * p.price)) desc
 limit 10;
 
 -- отчет о продавцах, чья средняя выручка за сделку
@@ -64,7 +64,7 @@ select
     COUNT(age) as age_count
 from customers
 group by age_category
-order by 1;
+order by age_category;
 
 -- выводим количество покупателй и выручку по месяцам
 select
